@@ -1,0 +1,168 @@
+swagger: '2.0'
+info:
+  title: OCB Balance & Movements Endpoint
+  description: Retrieve balance information and request authorisations for movements.
+  version: "1.0.0"
+# the domain of the service
+host: balances.getsandbox.com
+# array of all schemes that your API supports
+schemes:
+  - https
+# will be prefixed to all paths
+basePath: /v1
+produces:
+  - application/json
+paths:
+  /authorisations:
+    post:
+      summary: Authorise a movement against an account
+      description: |
+        Authorises a movement for the provided account.
+      parameters:
+        - name: auth
+          in: body
+          description: The details required to authorise a movement
+          required: true
+          schema: 
+            $ref: '#/definitions/movement'
+      tags:
+        - Authorisations
+      responses:
+        200:
+          description: Authorisation response
+          schema:
+            $ref: '#/definitions/authorisationResponse'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/error'
+  /balances/{accountId}:
+    get:
+      summary: Retrieve balances
+      description: |
+        Retrieve all balances for an account id
+      parameters:
+        - name: accountId
+          in: path
+          type: string
+          required: true
+      tags:
+        - Balances
+      responses:
+        200:
+          description: Auth response. Empty guid?
+          schema:
+            $ref: '#/definitions/allbalances'
+            
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/error'
+  /transactions/{accountId}:
+    get:
+      summary: retrieves transaction history for given account
+      description: |
+        The entire transaction history for the given account
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          type: string
+      tags:
+        - Transactions
+      responses:
+        200:
+          description: Array of all transactions
+          schema:
+            type: array
+            items:  
+              $ref: '#/definitions/transaction'
+definitions:
+  movement:
+    type: object
+    required: ['uniqueReference', 'accountId', 'amount', 'narrative']
+    properties: 
+      uniqueReference:
+        type: string
+        description: unique reference field present on all messages related to a card transaction, provided by FIS
+      accountId: 
+        type: string
+        description: the 8 digit account number
+        minLength: 8
+        maxLength: 8
+        pattern: '^[0-9]{8,8}$'
+      amount: 
+        type: number
+        format: decimal
+        description: the amount to authorise
+      narrative:
+        type: string
+        description: the detail of the transaction
+  transaction:
+    type: object
+    properties: 
+      id:
+        type: string
+        format: uuid
+      currency:
+        type: string
+      valueDate:
+        type: string
+        format: datetime
+      postingDate:
+        type: string
+        format: datetime
+      narrative:
+        type: string
+      amount:
+        type: number
+        format: decimal
+      transactionCode:
+        type: string
+      transactionDescription:
+        type: string
+      ledgerBalance:
+        type: number
+        format: decimal
+      status:
+        type: string
+        enum: [
+          'CLEARED',
+          'PENDING'
+        ]
+  authorisationResponse:
+    type: object
+    properties:
+      authToken:
+        type: string
+        format: Guid
+        description: The auth token for correlation in any payments/transfe
+      errors:
+        type: array
+        items:
+          type: string
+          description: if the request wasn't authorised, a list of reasons
+      authorised:
+        type: boolean
+        description: was the request authorised?
+  allbalances:
+    type: object
+    properties: 
+      available: 
+        type: number
+        format: decimal
+        description: the cutomer's available balance
+      status: 
+        type: number
+        format: decimal
+        description: the customer's status balance
+  error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string

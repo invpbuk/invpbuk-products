@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>DPR Direct Interface</title>
+</head>
+<body>
+    <div class=wsd wsd_style="roundgreen" >
+        <pre>
+
+title Investec DPR - Credit Exposure Query
+
+Client -> +Broker: Enquiry
+    Broker -> +DPR : Client Details 
+
+        DPR ->+ interface: Exposure query
+            interface ->+ oneView : Client Query
+                alt Multiple client hits
+                    oneView --> interface: mulitple matchs
+                    interface--> DPR: oneViewId : array
+                    DPR ->+ DPR: create task
+                    DPR ->>* Lending Ops: Task
+                        note right of Lending Ops 
+                            need to detail the flow\nfor task execution
+                        end note
+                    destroy Lending Ops
+                    DPR --> Broker: Match fail\n"Hand off" notification
+                    deactivate DPR
+                else No client hits
+                    oneView --> interface : no match
+                    interface --> DPR : oneViewId : null
+                    DPR --> Broker : Zero exposure result
+                else Single client hit
+                    oneView --> interface : single match
+                    interface ->+* Sonic: Exposure query with oneViewId
+                    Sonic --> interface: Exposure value
+                        note right of Sonic 
+                            need to understand if there is a sonic API that\ncan be used for this query
+                        end note
+                    destroy Sonic 
+                    interface --> DPR: oneViewId\nexposure value
+                    DPR --> Broker: exposure result
+                end alt
+            Broker -> Client: result
+        </pre>
+    </div>
+    <script type="text/javascript" src="http://www.websequencediagrams.com/service.js">
+    </script>
+</body>
+</html>
